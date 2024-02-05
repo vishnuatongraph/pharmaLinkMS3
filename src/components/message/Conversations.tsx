@@ -1,6 +1,5 @@
 "use client";
 import searchIcon from "../../../public/images/search.svg";
-import { ConversationsData } from "@/utils/constants/message/conversationsData";
 import doubleTick from "../../../public/images/tick.svg";
 import blueTick from "../../../public/images/blueTick.svg";
 import Image from "next/image";
@@ -16,6 +15,8 @@ function Conversations() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [users, setUsers] = useState<any[] | null>(null);
   const userIdRef = useRef<number | null>(null);
+
+  const [searchKey,setSearchKey]=useState<string>("")
 
   if (typeof window !== "undefined" && window.localStorage) {
     let storedUserId = localStorage.getItem("supabaseSenderId");
@@ -65,6 +66,11 @@ function Conversations() {
     fetchUsers();
   }, []);
 
+  const getFilteredUsers =  ()=>{
+    return users?.filter(user=>user.Name.toLowerCase().includes(searchKey.toLowerCase()))
+  }
+  
+
   return (
     <div className="h-full w-full grid grid-rows-[54px_auto]">
       <div className="flex flex-row border bg-neutral-100 pl-2.5 rounded-[10px] border-solid border-[#e0e0e0]">
@@ -73,10 +79,12 @@ function Conversations() {
           type="text"
           placeholder="Search chats"
           className="no-outline bg-neutral-100 ml-2.5 placeholder-gray"
+          value={searchKey}
+          onChange={e=>{setSearchKey(e.target.value)}}
         />
       </div>
       <div className="flex flex-col no-scrollbar">
-        {users?.map((user) => (
+        {getFilteredUsers()?.map((user) => (
           <Link
             href={`/message?id=${user.id}`}
             className={`grid flex-row grid-cols-[60px_auto] w-full mt-2.5 rounded-[10px] p-[10px] ${

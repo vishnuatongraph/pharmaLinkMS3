@@ -11,10 +11,14 @@ import MessageList from "./MessageList";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
+import "./chat.css"
+import closeIcon from "../../../public/images/close.png"
 
 function Chat() {
   const searchParams = useSearchParams();
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [searchVisible,setSearchVisilbe]=useState<boolean>(false);
+  const [searchKey,setSearchKey]=useState<string>("");
   const [user, setUser] = useState<{
     Name: String;
     id: Number;
@@ -81,10 +85,16 @@ function Chat() {
     }
   };
 
+  const handleFileUpload=(e:any)=>{
+    const uploadForm=document.getElementById("upload-input");
+    uploadForm?.click()
+  }
+
   return (
     <>
       {user && (
         <div className="grid grid-rows-[90px_auto_90px] overflow-hidden">
+      
           <div className="bg-white border-b-[#28303033] border-b border-solid flex justify-between items-center px-5">
             <div className="flex flex-row gap-x-5">
               <div className="h-11 w-11 overflow-hidden rounded-[50%]">
@@ -95,29 +105,41 @@ function Chat() {
                 <p className="text-sm font-normal text-[#2cbfca]">Active now</p>
               </div>
             </div>
-            <div className="flex flex-row gap-x-5">
-              <button className="h-6 w-6 flex justify-center items-center">
-                <Image src={searchIcon} alt="search" />
+            <div className="flex flex-row gap-x-5 items-center">
+              <div className={`relative flex flex-row gap-x-2 h-[35px] justify-center items-center px-[5px] rounded-[20px] transition-[0.5s]
+                              ${searchVisible?"bg-[#f3f3f3]":"bg-[#ffffff]"}
+              `}>
+
+               {searchVisible&&<input type="text"  className="bg-[#00000000] no-outline pl-[10px] transition-[0.5s] text-[#283030aa]" placeholder="Search Messages "
+                  onChange={(e)=>{
+                    setSearchKey(e.target.value)
+                  }}
+               />}
+
+              <button className="h-6 w-6 flex justify-center items-center" onClick={()=>{setSearchVisilbe(!searchVisible)}}>
+                {!searchVisible&&<Image src={searchIcon} alt="search" />}
+                {searchVisible&&<Image src={closeIcon} alt="close" className="h-4 w-4" />}
               </button>
+              </div>
               <button className="h-6 w-6 flex justify-center items-center">
                 <Image src={optionsIcon} alt="options" />
               </button>
             </div>
           </div>
-          <div className="bg-neutral-100 border-r-[#28303033] border-r border-solid max-h-[70vh] overflow-auto">
-            <MessageList />
+          <div className="bg-neutral-100 border-r-[#28303033] border-r border-solid max-h-[70vh] overflow-auto relative">
+            <MessageList  />
           </div>
           <div className="bg-white border-t-[#28303033] border-t border-solid grid grid-cols-[100px_auto_60px] gap-x-5">
             <div className="flex items-center gap-x-5 pl-5">
               <button className="flex justify-center items-center h-6 w-6">
                 <Image src={emojiIcon} alt="emoji" />
               </button>
-              <button className="flex justify-center items-center h-6 w-6">
+              <button className="flex justify-center items-center h-6 w-6 " onClick={handleFileUpload}>
                 <Image src={imageIcon} alt="image" />
               </button>
             </div>
             <div className="flex items-center justify-center">
-              {/* <form id="messege-input"> */}
+              <form id="messege-input" className="w-full" onSubmit={e=>{e.preventDefault();sendMessage(e)}}>
               <input
                 type="text"
                 placeholder="Enter your message"
@@ -127,7 +149,13 @@ function Chat() {
                 }}
                 value={message}
               />
-              {/* </form> */}
+              </form> 
+
+              <form action="" id="upload-form" className="hidden">
+                <button className="absolute flex justify-center align-center h-2.5 w-2.5 right-2.5 top-2.5">X</button>
+                <input type="file" id="upload-input" />
+              </form>
+              
             </div>
             <div className="flex items-center">
               <button
