@@ -4,7 +4,7 @@ import blueTick from "../../../public/images/blueTick.svg";
 import Image from "next/image";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import moment from "moment";
 
 interface RealtimeEvent {
@@ -13,10 +13,12 @@ interface RealtimeEvent {
   new: any;
   schema: String;
 }
+ interface MessageListProps{
+  searchKey:string
+ }
 
 
-
-function MessageList() {
+const MessageList:React.FC<MessageListProps>=({searchKey})=>{
   const searchParams = useSearchParams();
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -34,6 +36,7 @@ function MessageList() {
 
  
   const fetchMessages = async () => {
+    console.log("fetching messages")
     try {
       const { data, error } = await supabaseClient
         .from("SupabaseMessages")
@@ -61,6 +64,9 @@ function MessageList() {
     }
   };
 
+  const getMessages=()=>{
+    return messages.filter(message=>message.content.toLowerCase().includes(searchKey.toLowerCase()))
+  }
   const markMessagesAsRead = async (messagesToMarkAsRead: any) => {
     const unreadMessages = messagesToMarkAsRead.filter(
       (msg: any) => msg.receiverId === userIdRef && !msg.isRead
@@ -130,7 +136,7 @@ function MessageList() {
 
   return (
     <div className="w-full pl-2.5 pr-5 py-2.5 flex flex-col-reverse gap-y-2.5 overflow-scroll no-scrollbar" id="message-cont">
-      {messages?.map((message, index) => {
+      {getMessages()?.map((message, index) => {
         const currentFullTime = moment(message.created_at).format(
           "DD MMM ddd [at] h:mm A"
         );

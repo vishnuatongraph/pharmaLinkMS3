@@ -64,6 +64,8 @@ function Chat() {
 
   useEffect(() => {
     fetchUser();
+    setSearchVisilbe(false)
+    setSearchKey("")
   }, [searchParams]);
 
   const sendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -116,7 +118,12 @@ function Chat() {
                   }}
                />}
 
-              <button className="h-6 w-6 flex justify-center items-center" onClick={()=>{setSearchVisilbe(!searchVisible)}}>
+              <button className="h-6 w-6 flex justify-center items-center"
+                   onClick={()=>{
+                      setSearchVisilbe(!searchVisible);
+                      setSearchKey("")
+                   }}
+              >
                 {!searchVisible&&<Image src={searchIcon} alt="search" />}
                 {searchVisible&&<Image src={closeIcon} alt="close" className="h-4 w-4" />}
               </button>
@@ -127,7 +134,7 @@ function Chat() {
             </div>
           </div>
           <div className="bg-neutral-100 border-r-[#28303033] border-r border-solid max-h-[70vh] overflow-auto relative">
-            <MessageList  />
+            <MessageList searchKey={searchKey}/>
           </div>
           <div className="bg-white border-t-[#28303033] border-t border-solid grid grid-cols-[100px_auto_60px] gap-x-5">
             <div className="flex items-center gap-x-5 pl-5">
