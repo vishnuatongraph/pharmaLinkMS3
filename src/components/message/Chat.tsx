@@ -13,16 +13,19 @@ import { useSearchParams } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 import "./chat.css"
 import closeIcon from "../../../public/images/close.png"
+import EmojiPicker from "emoji-picker-react"
 
 function Chat() {
   const searchParams = useSearchParams();
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchVisible,setSearchVisilbe]=useState<boolean>(false);
   const [searchKey,setSearchKey]=useState<string>("");
+  const [showPicker,setShowPicker]=useState<boolean>(false)
   const [user, setUser] = useState<{
     Name: String;
     id: Number;
     profileUrl: String;
+    isActive:boolean
   } | null>(null);
   const [message, setMessage] = useState("");
   const userIdRef = useRef<Number | null>(null);
@@ -92,19 +95,25 @@ function Chat() {
     uploadForm?.click()
   }
 
+  const handleEmojiSelection=(emoji:any)=>{
+    setMessage(message=>message+emoji.emoji)
+    
+  }
+
+
   return (
     <>
       {user && (
-        <div className="grid grid-rows-[90px_auto_90px] overflow-hidden">
+        <div className="grid grid-rows-[90px_auto_90px] h-full w-full">
       
-          <div className="bg-white border-b-[#28303033] border-b border-solid flex justify-between items-center px-5">
+          <div className="bg-white border-b-[#28303033] border-b border-solid flex justify-between items-center px-5 z-[5]">
             <div className="flex flex-row gap-x-5">
               <div className="h-11 w-11 overflow-hidden rounded-[50%]">
                 <Image src={activeProfile} alt="profile" />
               </div>
               <div className="flex flex-col">
                 <p className="text-lg font-semibold text-black">{user?.Name}</p>
-                <p className="text-sm font-normal text-[#2cbfca]">Active now</p>
+               {user.isActive&&<p className="text-sm font-normal text-[#2cbfca]">Active now</p>}
               </div>
             </div>
             <div className="flex flex-row gap-x-5 items-center">
@@ -136,16 +145,22 @@ function Chat() {
           <div className="bg-neutral-100 border-r-[#28303033] border-r border-solid max-h-[70vh] overflow-auto relative">
             <MessageList searchKey={searchKey}/>
           </div>
-          <div className="bg-white border-t-[#28303033] border-t border-solid grid grid-cols-[100px_auto_60px] gap-x-5">
-            <div className="flex items-center gap-x-5 pl-5">
-              <button className="flex justify-center items-center h-6 w-6">
+          <div className="relative">
+             {showPicker&& <div className="absolute bottom-[90px] left-[30px]">
+                <EmojiPicker height={300} width={400} searchDisabled onEmojiClick={handleEmojiSelection}/>
+              </div>}
+          <div className="bg-white border-t-[#28303033] border-t border-solid grid grid-cols-[100px_auto_60px] gap-x-5 h-full w-full">
+            <div className="flex items-center gap-x-5 pl-5 relative overflow-hidden">
+              <button className="flex justify-center items-center h-6 w-6" 
+               onClick={()=>{setShowPicker(!showPicker)}}
+              >
                 <Image src={emojiIcon} alt="emoji" />
               </button>
               <button className="flex justify-center items-center h-6 w-6 " onClick={handleFileUpload}>
                 <Image src={imageIcon} alt="image" />
               </button>
             </div>
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center relative">
               <form id="messege-input" className="w-full" onSubmit={e=>{e.preventDefault();sendMessage(e)}}>
               <input
                 type="text"
@@ -160,7 +175,7 @@ function Chat() {
 
               <form action="" id="upload-form" className="hidden">
                 <button className="absolute flex justify-center align-center h-2.5 w-2.5 right-2.5 top-2.5">X</button>
-                <input type="file" id="upload-input" />
+                <input type="file" id="upload-input" accept="image/png, image/gif, image/jpeg"/>
               </form>
               
             </div>
@@ -172,6 +187,7 @@ function Chat() {
                 <Image src={sendIcon} alt="send" />
               </button>
             </div>
+          </div>
           </div>
         </div>
       )}

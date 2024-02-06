@@ -4,7 +4,7 @@ import blueTick from "../../../public/images/blueTick.svg";
 import Image from "next/image";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import moment from "moment";
 
 interface RealtimeEvent {
@@ -26,6 +26,7 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
   const userIdRef = 1; //useRef<number | null>(null);
   let prevDate: string;
 
+  const listRef=useRef<HTMLDivElement|null>(null)
   // if (typeof window !== "undefined" && window.localStorage) {
   //   let storedUserId = localStorage.getItem("supabaseSenderId");
 
@@ -48,7 +49,7 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
             "id"
           )},receiverId.eq.${userIdRef})`
         )
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
 
       if (error) {
         console.error(error);
@@ -105,7 +106,7 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
 
     if (!isNewMessageExist && isMessageForReceiver) {
       // Insert new message into the state
-      fetchMessages();
+      setMessages((prevMessage)=>[...prevMessage,event.new])
     } else if (isMessageForReceiver && event.type === "UPDATE") {
       // Update existing message in the state
       setMessages((prevMessages) =>
@@ -132,10 +133,14 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
     };
   }, [searchParams]);
 
-
+  useLayoutEffect(()=>{
+     if(listRef.current){
+      listRef.current.lastElementChild?.scrollIntoView()
+     }
+  },[messages])
 
   return (
-    <div className="w-full pl-2.5 pr-5 py-2.5 flex flex-col-reverse gap-y-2.5 overflow-scroll no-scrollbar" id="message-cont">
+    <div ref={listRef} className="w-full pl-2.5 pr-5 py-2.5 flex flex-col gap-y-2.5 overflow-auto no-scrollbar" id="message-cont">
       {getMessages()?.map((message, index) => {
         const currentFullTime = moment(message.created_at).format(
           "DD MMM ddd [at] h:mm A"
