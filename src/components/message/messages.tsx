@@ -12,13 +12,22 @@ export default function Messages() {
   .update({ isActive:true })
   .eq('id',1)
   .select()
-   if(data){
-    console.log("updating active",data)
-   }
-   console.log(error)
   }
+
+  const setUserInactive=async()=>{
+    const { data, error } = await supabaseClient
+  .from('SupabaseUsers')
+  .update({ isActive:false })
+  .eq('id',1)
+  .select()
+  }
+
   useEffect(()=>{
     setUserActive()
+
+    return(()=>{
+      setUserInactive()
+    })
   },[])
   return (
     <div className="grid grid-cols-[360px_auto] h-full w-full mr-10 mt-5 pr-[20px]">

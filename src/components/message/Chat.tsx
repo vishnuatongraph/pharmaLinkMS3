@@ -15,16 +15,24 @@ import "./chat.css"
 import closeIcon from "../../../public/images/close.png"
 import EmojiPicker from "emoji-picker-react"
 
+interface RealtimeEvent {
+  table: string;
+  type: string;
+  new: any;
+  schema: String;
+}
+
 function Chat() {
   const searchParams = useSearchParams();
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchVisible,setSearchVisilbe]=useState<boolean>(false);
   const [searchKey,setSearchKey]=useState<string>("");
-  const [showPicker,setShowPicker]=useState<boolean>(false)
+  const [showPicker,setShowPicker]=useState<boolean>(false);
+  const [isActive,setIsActive]=useState<boolean>(false);
   const [user, setUser] = useState<{
-    Name: String;
-    id: Number;
-    profileUrl: String;
+    Name: string;
+    id: number;
+    profileUrl: string;
     isActive:boolean
   } | null>(null);
   const [message, setMessage] = useState("");
@@ -56,6 +64,7 @@ function Chat() {
         }
         if (userExistsData) {
           setUser(userExistsData[0]);
+          setIsActive(userExistsData[0].isActive)
         }
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -65,10 +74,22 @@ function Chat() {
     }
   };
 
+ 
   useEffect(() => {
     fetchUser();
     setSearchVisilbe(false)
     setSearchKey("")
+    
+const channels = supabaseClient.channel('custom-update-channel')
+.on(
+  'postgres_changes',
+  { event: 'UPDATE', schema: 'public', table: 'SupabaseUsers' },
+  (payload) => {
+   setIsActive(payload.new.isActive)
+  }
+)
+.subscribe()
+    
   }, [searchParams]);
 
   const sendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -109,11 +130,12 @@ function Chat() {
           <div className="bg-white border-b-[#28303033] border-b border-solid flex justify-between items-center px-5 z-[5]">
             <div className="flex flex-row gap-x-5">
               <div className="h-11 w-11 overflow-hidden rounded-[50%]">
-                <Image src={activeProfile} alt="profile" />
+               {!user.profileUrl&&<Image src={activeProfile} alt="profile" />}
+               {user.profileUrl&&<Image src={user.profileUrl} alt="profile" height={100} width={100}/>}
               </div>
               <div className="flex flex-col">
                 <p className="text-lg font-semibold text-black">{user?.Name}</p>
-               {user.isActive&&<p className="text-sm font-normal text-[#2cbfca]">Active now</p>}
+               {isActive&&<p className="text-sm font-normal text-[#2cbfca]">Active now</p>}
               </div>
             </div>
             <div className="flex flex-row gap-x-5 items-center">

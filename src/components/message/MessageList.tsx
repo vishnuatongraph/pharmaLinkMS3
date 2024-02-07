@@ -37,7 +37,6 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
 
  
   const fetchMessages = async () => {
-    console.log("fetching messages")
     try {
       const { data, error } = await supabaseClient
         .from("SupabaseMessages")
@@ -98,7 +97,8 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
         event.new.receiverId == searchParams.get("id")) ||
       (event.new.senderId == searchParams.get("id") &&
         event.new.receiverId == userIdRef);
-    const newMessage = [event.new];
+    const newMessage = [event.new]
+
 
     if (event.new.senderId == searchParams.get("id")) {
       markMessagesAsRead(newMessage);
@@ -106,7 +106,19 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
 
     if (!isNewMessageExist && isMessageForReceiver) {
       // Insert new message into the state
-      setMessages((prevMessage)=>[...prevMessage,event.new])
+
+     
+      setMessages(prevMessage=>{
+        if(prevMessage[prevMessage.length-1].id==event.new.id){
+          console.log("no update")
+          return [...prevMessage]
+        }
+        else{
+          console.log("update")
+          return [...prevMessage,event.new]
+        }
+        
+      })
     } else if (isMessageForReceiver && event.type === "UPDATE") {
       // Update existing message in the state
       setMessages((prevMessages) =>
@@ -120,17 +132,18 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
   useEffect(() => {
     fetchMessages();
     const subscription = supabaseClient
-      .channel("RealtimeSubscription")
-      .on(
-        "postgres_changes" as any,
-        { event: "*", schema: "public", table: "SupabaseMessages" } as any,
-        handleSubscription as any
-      )
-      .subscribe();
+    .channel("RealtimeSubscription")
+    .on(
+      "postgres_changes" as any,
+      { event: "*", schema: "public", table: "SupabaseMessages" } as any,
+      handleSubscription as any
+    )
+    .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
+  return () => {
+    subscription.unsubscribe();
+  };
+   
   }, [searchParams]);
 
   useLayoutEffect(()=>{
@@ -138,7 +151,6 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
       listRef.current.lastElementChild?.scrollIntoView()
      }
   },[messages])
-
   return (
     <div ref={listRef} className="w-full pl-2.5 pr-5 py-2.5 flex flex-col gap-y-2.5 overflow-auto no-scrollbar" id="message-cont">
       {getMessages()?.map((message, index) => {

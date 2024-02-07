@@ -23,7 +23,7 @@ function Conversations() {
   }
 
   const fetchUsers = async () => {
-    console.log("fetching users")
+   
     try {
       const { data: userExistsData, error: userExistsError } =
         await supabaseClient.from("SupabaseUsers").select("id").eq("id", 1);
@@ -57,7 +57,6 @@ function Conversations() {
       setFetchError("An error occurred while fetching users");
       setUsers(null);
     }
-    console.log("users fethced")
   };
 
   useEffect(() => {
