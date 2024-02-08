@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import UserLink from "./UserLink";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 function Conversations() {
   const router = useRouter();
@@ -59,8 +60,45 @@ function Conversations() {
     }
   };
 
+  const fetchConversations = async () => {
+    try {
+      const {data,error}:any=await supabaseClient.from("Participants")
+      .select("Conversations(id)")
+      .eq("user_id",1)
+       if(data){
+        let convoId=data.map((convo:any)=>convo.Conversations.id);
+        const {data:conversations,error}=await supabaseClient.from("Participants")
+        .select("Conversations(id,profile_url,is_groupchat,Messages!Conversations_latest_message_fkey(*)) ,SupabaseUsers(*)")
+        .in("conversation_id",convoId)
+        .neq("user_id",1)
+        if(conversations){
+          const convos=conversations.map((convo:any)=>{
+            if(!convo.Conversations.is_groupchat){
+              convo.Conversations.name=convo.SupabaseUsers.Name;
+              convo.Conversations.profile_url=convo.SupabaseUsers.profileUrl
+            }
+            return {
+              id:convo.Conversations.id,
+              name:convo.Conversations.name,
+              profile_url:convo.Conversations.profile_url,
+              latest_message:{...convo.Conversations.Messages}
+            }
+          })
+          console.log(convos)
+        }
+        else if(error){
+          console.log(error)
+        }
+       }
+    } catch (error) {
+      console.log(error)
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchConversations();
+
   }, []);
 
   const getFilteredUsers =  ()=>{
