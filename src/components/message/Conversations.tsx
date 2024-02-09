@@ -7,6 +7,21 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import ConvoLink from "./ConvoLink";
 import { SupabaseClient } from "@supabase/supabase-js";
 
+interface LatestMessage{
+  senderId:number,
+  receiverId:number,
+  created_at:string,
+  content:string
+}
+interface UserChat{
+  id:number,
+  profileUrl:string,
+  Name:string,
+  latestMessage:LatestMessage|null,
+  pendingCount:number
+
+}
+
 function Conversations() {
   const router = useRouter();
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -43,7 +58,7 @@ function Conversations() {
       if (userExistsData && userExistsData.length > 0) {
         const { data, error }:any = await supabaseClient
           .from("SupabaseUsers")
-          .select(`select *,(select * from SupabaseMessages)`)
+          .select()
           .neq("id", 1);
         if (error) {
           setFetchError("Could not fetch the users");
@@ -51,9 +66,18 @@ function Conversations() {
           console.log(error)
         } else {
           setUsers(data);
-          console.log("users",data)
+          console.log("users",data);
           router.push(`/message?id=${data[0].id}`);
           setFetchError(null);
+
+          let { data:messages, error:messageError } = await supabaseClient
+         .rpc('get_users_with_latest_message',{user_id:2})
+          if(messages){
+            console.log(messages)
+          }
+          else if(messageError){
+            console.log(messageError)
+          }
         }
       }
     } catch (error: any) {
@@ -100,7 +124,7 @@ function Conversations() {
 
   useEffect(() => {
     fetchUsers();
-    fetchConversations();
+  //  fetchConversations();
 
   }, []);
 
