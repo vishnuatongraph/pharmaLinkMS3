@@ -11,6 +11,13 @@ body {
   ol {
     list-style: revert;
   }
+  
+}
+
+@layer utilities{
+  .no-scrollbar::-webkit-scrollbar{
+    display: none
+  }
 }
 
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
@@ -82,6 +89,14 @@ td div:first-child {
   width: 100%;
   height: 1024px;
   margin: auto;
+}
+
+
+.no-scrollbar::-webkit-scrollbar{
+  display: none;
+}
+.no-outline:focus{
+  outline: none;
 }
 
 @media only screen and (max-width: 1040px) {

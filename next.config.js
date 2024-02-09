@@ -9,8 +9,15 @@ const nextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "jvlxkyagdziwjkeusaxb.supabase.co",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
+  reactStrictMode: false,
 };
 
 module.exports = nextConfig;

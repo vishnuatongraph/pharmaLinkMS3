@@ -30,6 +30,7 @@
     "@tremor/react": "^3.13.3",
     "bootstrap-icons": "^1.11.3",
     "classnames": "^2.5.1",
+    "emoji-picker-react": "^4.7.12",
     "formik": "^2.4.5",
     "fullcalendar": "^6.1.10",
     "moment": "^2.30.1",

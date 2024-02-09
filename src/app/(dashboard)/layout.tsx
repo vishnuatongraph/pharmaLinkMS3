@@ -13,7 +13,7 @@ export default function layout({ children }: { children: React.ReactNode }) {
       <div className="flex gap-[30px] h-auto w-full">
         <DashSidebar sidebarData={PharmasistDashSidebar} />
         <DashHeader profilePic={OwnerDashHeaderData.profilePic} />
-        <div className="flex flex-col w-full h-full bg-[#F3F3F3] mt-[84px] ml-[20%]">
+        <div className="flex flex-col w-full h-[100vh] bg-[#F3F3F3] pt-[84px] pl-[20%] pb-[20px]">
           {children}
         </div>
       </div>
