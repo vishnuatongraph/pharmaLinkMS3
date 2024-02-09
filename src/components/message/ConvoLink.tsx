@@ -8,7 +8,7 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { useEffect, useState } from "react";
 import { handleClientScriptLoad } from "next/script";
 
-interface UserLinkProps {
+interface ConvoLinkProps {
   user: {
     id: string,
     Name: string,
@@ -23,7 +23,7 @@ interface RealtimeEvent {
   new: any;
   schema: String;
 }
-const UserLink: React.FC<UserLinkProps> = ({ user, hostUserId }) => {
+const ConvoLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
   const searchParams = useSearchParams()
   const [latestMessage, setLatestMessage] = useState<{
     content: string,
@@ -158,4 +158,4 @@ const UserLink: React.FC<UserLinkProps> = ({ user, hostUserId }) => {
   )
 }
 
-export default UserLink
+export default ConvoLink

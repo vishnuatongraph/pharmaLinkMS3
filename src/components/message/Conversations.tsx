@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
-import UserLink from "./UserLink";
+import ConvoLink from "./ConvoLink";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 function Conversations() {
@@ -12,6 +12,7 @@ function Conversations() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [users, setUsers] = useState<any[] | null>(null);
   const userIdRef = useRef<number | null>(null);
+  const [conversations,setConversations]=useState<any[]|null>(null)
 
   const [searchKey,setSearchKey]=useState<string>("")
 
@@ -40,15 +41,17 @@ function Conversations() {
       }
 
       if (userExistsData && userExistsData.length > 0) {
-        const { data, error } = await supabaseClient
+        const { data, error }:any = await supabaseClient
           .from("SupabaseUsers")
-          .select()
+          .select(`select *,(select * from SupabaseMessages)`)
           .neq("id", 1);
         if (error) {
           setFetchError("Could not fetch the users");
           setUsers(null);
+          console.log(error)
         } else {
           setUsers(data);
+          console.log("users",data)
           router.push(`/message?id=${data[0].id}`);
           setFetchError(null);
         }
@@ -84,7 +87,7 @@ function Conversations() {
               latest_message:{...convo.Conversations.Messages}
             }
           })
-          console.log(convos)
+          setConversations(convos);
         }
         else if(error){
           console.log(error)
@@ -101,8 +104,8 @@ function Conversations() {
 
   }, []);
 
-  const getFilteredUsers =  ()=>{
-    return users?.filter(user=>user.Name.toLowerCase().includes(searchKey.toLowerCase()))
+  const getFilteredConversations =  ()=>{
+    return conversations?.filter(convo=>convo.name?.toLowerCase().includes(searchKey.toLowerCase()))
   }
   
 
@@ -119,8 +122,8 @@ function Conversations() {
         />
       </div>
       <div className="flex flex-col overflow-scroll no-scrollbar">
-        {getFilteredUsers()?.map((user) => (
-          <UserLink user={user} key={user.id} hostUserId="1"/>
+        {users?.map((user) => (
+          <ConvoLink user={user} key={user.id} hostUserId="1"/>
         ))}
       </div>
     </div>
