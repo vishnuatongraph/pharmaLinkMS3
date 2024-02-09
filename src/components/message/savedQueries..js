@@ -35,27 +35,31 @@ $$ language plpgsql;
 // query to create a function that gets latest messages of each chat
 
 /* 
-  CREATE OR REPLACE FUNCTION get_latest_messages(user_id integer)
+  CREATE OR REPLACE FUNCTION get_users_with_latest_message(user_id integer)
 RETURNS TABLE (
-    "other_id" bigint,
     "Id" bigint,
-    SenderId bigint,
-    ReceiverId bigint,
-    "Content" TEXT,
-    "Created_At" TIMESTAMP WITH TIME ZONE
+    "Name" TEXT,
+    "profileUrl" TEXT,
+    "latestMessageId" bigint,
+    "latestMessageSenderId" bigint,
+    "latestMessageReciverId" bigint,
+    "latestMessageContent" TEXT,
+    "latestMessageCreatedAt" TIMESTAMP WITH TIME ZONE
 ) AS $$
 BEGIN
     RETURN QUERY (
         SELECT
             CASE
-                WHEN "senderId" = 1 THEN "receiverId"
-                WHEN "receiverId" = 1 THEN "senderId"
+                WHEN "senderId" = user_id THEN "receiverId"
+                WHEN "receiverId" = user_id THEN "senderId"
             END AS userId,
-            "id",
-            "senderId",
-            "receiverId",
-            "content",
-            "created_at"
+            u."Name" AS Name,
+            u."profileUrl" As profileUrl,
+            m."id" AS latestMessageId,
+            m."senderId" AS latestMessageSenderId,
+            m."receiverId" AS latestMessageReceiverId,
+            m."content" AS latestMessageContent,
+            m."created_at" AS latestMessageCreatedAt
         FROM (
             SELECT
                 "id",
@@ -64,14 +68,21 @@ BEGIN
                 "content",
                 "created_at",
                 ROW_NUMBER() OVER (PARTITION BY CASE
-                                    WHEN "senderId" = 1 THEN "receiverId"
-                                    WHEN "receiverId" = 1 THEN "senderId"
+                                    WHEN "senderId" = user_id THEN "receiverId"
+                                    WHEN "receiverId" = user_id THEN "senderId"
                                     END
                                     ORDER BY "created_at" DESC) AS row_num
             FROM "SupabaseMessages"
             WHERE "senderId" = user_id OR "receiverId" = user_id
-        ) AS latest_messages
-        WHERE row_num = 1
+        ) AS m
+        LEFT JOIN "SupabaseUsers" AS u ON (
+            CASE
+                WHEN m."senderId" = user_id THEN m."receiverId"
+                WHEN m."receiverId" = user_id THEN m."senderId"
+            END) = u."id"
+        WHERE row_num = 1 and
+        u."id" != user_id
+        ORDER BY m."created_at" DESC -- Sort records by the latest created_at timestamp
     );
 END;
 $$ LANGUAGE plpgsql;

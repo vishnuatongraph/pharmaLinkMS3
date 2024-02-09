@@ -25,7 +25,7 @@ interface UserChat{
 function Conversations() {
   const router = useRouter();
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [users, setUsers] = useState<any[] | null>(null);
+  const [users, setUsers] = useState<UserChat[] | null>(null);
   const userIdRef = useRef<number | null>(null);
   const [conversations,setConversations]=useState<any[]|null>(null)
 
@@ -56,69 +56,57 @@ function Conversations() {
       }
 
       if (userExistsData && userExistsData.length > 0) {
-        const { data, error }:any = await supabaseClient
-          .from("SupabaseUsers")
-          .select()
-          .neq("id", 1);
-        if (error) {
-          setFetchError("Could not fetch the users");
-          setUsers(null);
-          console.log(error)
-        } else {
-          setUsers(data);
-          console.log("users",data);
-          router.push(`/message?id=${data[0].id}`);
-          setFetchError(null);
-
-          let { data:messages, error:messageError } = await supabaseClient
+       
+          const { data:contactUsers, error:contactUsersError } = await supabaseClient
          .rpc('get_users_with_latest_message',{user_id:2})
-          if(messages){
-            console.log(messages)
+         let contactIds=[];
+         let userList:UserChat[]=[];
+          if(contactUsers){
+            contactIds=await contactUsers.map((user:any)=>{
+               let newMessage:LatestMessage={
+                content:user.latestMessageContent,
+                senderId:user.latestMessageSenderId,
+                receiverId:user.latestMessageReceiverId,
+                created_at:user.latestMessageCreatedAt
+               }
+               let newUser:UserChat={
+                id:user.Id,
+                Name:user.Name,
+                profileUrl:user.profileUrl,
+                latestMessage:newMessage,
+                pendingCount:0
+               }
+               userList.push(newUser);
+
+               return user.Id
+            });
           }
-          else if(messageError){
-            console.log(messageError)
+          const { data:nonContactUser, error} = await supabaseClient
+         .rpc('get_users',{contactids:contactIds,userid:2})
+
+          if(error){
+            console.log(error)
           }
-        }
+
+          if(nonContactUser){
+            await nonContactUser.forEach((user:any)=>{
+              let newUser:UserChat={
+                id:user.id,
+                Name:user.Name,
+                profileUrl:user.profileUrl,
+                latestMessage:null,
+                pendingCount:0
+               }
+               userList.push(newUser);
+            })
+          }
+          console.log(userList)
+          setUsers(userList)
       }
     } catch (error: any) {
       console.error("Error fetching users:", error.message);
       setFetchError("An error occurred while fetching users");
       setUsers(null);
-    }
-  };
-
-  const fetchConversations = async () => {
-    try {
-      const {data,error}:any=await supabaseClient.from("Participants")
-      .select("Conversations(id)")
-      .eq("user_id",1)
-       if(data){
-        let convoId=data.map((convo:any)=>convo.Conversations.id);
-        const {data:conversations,error}=await supabaseClient.from("Participants")
-        .select("Conversations(id,profile_url,is_groupchat,Messages!Conversations_latest_message_fkey(*)) ,SupabaseUsers(*)")
-        .in("conversation_id",convoId)
-        .neq("user_id",1)
-        if(conversations){
-          const convos=conversations.map((convo:any)=>{
-            if(!convo.Conversations.is_groupchat){
-              convo.Conversations.name=convo.SupabaseUsers.Name;
-              convo.Conversations.profile_url=convo.SupabaseUsers.profileUrl
-            }
-            return {
-              id:convo.Conversations.id,
-              name:convo.Conversations.name,
-              profile_url:convo.Conversations.profile_url,
-              latest_message:{...convo.Conversations.Messages}
-            }
-          })
-          setConversations(convos);
-        }
-        else if(error){
-          console.log(error)
-        }
-       }
-    } catch (error) {
-      console.log(error)
     }
   };
 

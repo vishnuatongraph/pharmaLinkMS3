@@ -10,9 +10,16 @@ import { handleClientScriptLoad } from "next/script";
 
 interface ConvoLinkProps {
   user: {
-    id: string,
-    Name: string,
-    profileUrl: string
+    id:number,
+    profileUrl:string,
+    Name:string,
+    latestMessage:{
+       senderId:number,
+       receiverId:number,
+       created_at:string,
+       content:string
+    }|null,
+    pendingCount:number
   },
   hostUserId: string
 }
