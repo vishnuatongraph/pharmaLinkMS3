@@ -4,14 +4,15 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
-import ConvoLink from "./ConvoLink";
+import UserLink from "./UserLink";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 interface LatestMessage{
   senderId:number,
   receiverId:number,
   created_at:string,
-  content:string
+  content:string,
+  isRead:boolean
 }
 interface UserChat{
   id:number,
@@ -58,15 +59,17 @@ function Conversations() {
       if (userExistsData && userExistsData.length > 0) {
        
           const { data:contactUsers, error:contactUsersError } = await supabaseClient
-         .rpc('get_users_with_latest_message',{user_id:2})
+         .rpc('get_users_with_latest_message',{user_id:1})
          let contactIds=[];
          let userList:UserChat[]=[];
           if(contactUsers){
+            console.log("contact users",contactUsers)
             contactIds=await contactUsers.map((user:any)=>{
                let newMessage:LatestMessage={
                 content:user.latestMessageContent,
                 senderId:user.latestMessageSenderId,
                 receiverId:user.latestMessageReceiverId,
+                isRead:user.latestMessageIsRead,
                 created_at:user.latestMessageCreatedAt
                }
                let newUser:UserChat={
@@ -82,10 +85,13 @@ function Conversations() {
             });
           }
           const { data:nonContactUser, error} = await supabaseClient
-         .rpc('get_users',{contactids:contactIds,userid:2})
+         .rpc('get_users',{contactids:contactIds,userid:1})
 
           if(error){
             console.log(error)
+          }
+          if(contactUsersError){
+            console.log(contactUsersError)
           }
 
           if(nonContactUser){
@@ -100,7 +106,7 @@ function Conversations() {
                userList.push(newUser);
             })
           }
-          console.log(userList)
+          console.log("userList",userList)
           setUsers(userList)
       }
     } catch (error: any) {
@@ -135,7 +141,7 @@ function Conversations() {
       </div>
       <div className="flex flex-col overflow-scroll no-scrollbar">
         {users?.map((user) => (
-          <ConvoLink user={user} key={user.id} hostUserId="1"/>
+          <UserLink user={user} key={user.id} hostUserId={1}/>
         ))}
       </div>
     </div>

@@ -17,11 +17,12 @@ interface ConvoLinkProps {
        senderId:number,
        receiverId:number,
        created_at:string,
-       content:string
+       content:string,
+       isRead:boolean
     }|null,
     pendingCount:number
   },
-  hostUserId: string
+  hostUserId: number
 }
 
 interface RealtimeEvent {
@@ -30,55 +31,17 @@ interface RealtimeEvent {
   new: any;
   schema: String;
 }
-const ConvoLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
-  const searchParams = useSearchParams()
-  const [latestMessage, setLatestMessage] = useState<{
-    content: string,
-    isRead: boolean,
-    senderId: string
-  } | null>(null)
-  const [pendingCount, setPendingCount] = useState<number>(0)
+const UserLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
+  const searchParams = useSearchParams();
+  const [latestMessage,setLatestMessage]=useState<{
+       senderId:number,
+       receiverId:number,
+       created_at:string,
+       content:string
+  }|null>(user.latestMessage);
 
-  const getLatestMessage = async () => {
-    try {
-      const { data, error } = await supabaseClient
-        .from("SupabaseMessages")
-        .select("*")
-        .or(
-          `and(senderId.eq.${hostUserId},receiverId.eq.${user.id}),and(senderId.eq.${user.id},receiverId.eq.${hostUserId})`
-        )
-        .order("created_at", { ascending: false }).limit(1);
-      if (data) {
-        if (data[0]) {
-          setLatestMessage(data[0])
-        }
-      }
-      else if (error) {
-        console.log(error)
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
-  const getPendingCount = async () => {
-    try {
-      const { data, error } = await supabaseClient
-        .from("SupabaseMessages")
-        .select("*")
-        .or(
-          `and(senderId.eq.${user.id},receiverId.eq.${hostUserId})`
-        ).eq("isRead", false)
-      if (data) {
-        setPendingCount(data.length)
-      }
-      else if (error) {
-        console.log(error)
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
+  const [pendingCount,setPendingCount]=useState<number>(user.pendingCount)
+  
   const handleNewMessageSubcription=(payload:any)=>{
     const message=payload.new
     const isMessegeByUser=(message.senderId==hostUserId&&message.receiverId==user.id)||(message.receiverId==hostUserId&&message.senderId==user.id);
@@ -101,10 +64,6 @@ const ConvoLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
     }
   }
   useEffect(() => {
-    getLatestMessage()
-    getPendingCount()
-
-
     const channels = supabaseClient.channel(`new-message-event-${user.id}`)
       .on(
         'postgres_changes',
@@ -117,7 +76,7 @@ const ConvoLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
   return (
     <Link
       href={`/message?id=${user.id}`}
-      className={`grid flex-row grid-cols-[60px_auto] w-full mt-2.5 rounded-[10px] p-[10px] ${searchParams.get("id") == user.id ? "bg-[#2cbfca22]" : ""
+      className={`grid flex-row grid-cols-[60px_auto] w-full mt-2.5 rounded-[10px] p-[10px] ${searchParams.get("id") == user.id+"" ? "bg-[#2cbfca22]" : ""
         }`}
       key={user.id}
     >
@@ -142,9 +101,9 @@ const ConvoLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
         </div>
         {latestMessage && <div className="flex justify-between align-center">
           <div className="flex flex-row gap-x-[5px]">
-            {latestMessage?.senderId == hostUserId && !latestMessage?.isRead && <Image src={doubleTick} alt="sent" />}{" "}
+            {user.latestMessage?.senderId == hostUserId && !user.latestMessage?.isRead && <Image src={doubleTick} alt="sent" />}{" "}
             {/*staus of last message to be checked*/}
-            {latestMessage?.senderId == hostUserId && latestMessage?.isRead && <Image src={blueTick} alt="read" />}
+            {latestMessage?.senderId == hostUserId && user.latestMessage?.isRead && <Image src={blueTick} alt="read" />}
             {/*status of last message to be checked*/}
             <p className="text-sm font-normal text-[#283030aa]">
               {latestMessage?.content.length > 18 ? latestMessage.content.substring(0, 15) + "..." : latestMessage.content}
@@ -165,4 +124,4 @@ const ConvoLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
   )
 }
 
-export default ConvoLink
+export default UserLink
