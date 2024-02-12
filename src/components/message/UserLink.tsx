@@ -34,6 +34,9 @@ interface RealtimeEvent {
 const UserLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
   const searchParams = useSearchParams();
 
+  useEffect(()=>{
+
+  },[user])
   
   return (
     <Link

@@ -1,13 +1,12 @@
 "use client";
 import searchIcon from "../../../public/images/search.svg";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect,useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import UserLink from "./UserLink";
-import { SupabaseClient } from "@supabase/supabase-js";
 
 interface LatestMessage{
+  id:number,
   senderId:number,
   receiverId:number,
   created_at:string,
@@ -27,11 +26,12 @@ interface ContactUsersResponse{
   Id:number,
   Name:string,
   profileUrl:string,
+  latestMessageId:number,
   latestMessageContent:string,
   latestMessageSenderId:number,
   latestMessageReceiverId:number,
   latestMessageIsRead:boolean,
-  latestMessageCreatedAt:string
+  latestMessageCreatedAt:string,
 }
 
 interface SupabaseUser{
@@ -42,27 +42,29 @@ interface SupabaseUser{
   created_at:string
 }
 
+interface SupabaseMessage{
+  id:number,
+  content:string,
+  senderId:number,
+  receiverId:number,
+  isRead:boolean,
+  created_at:string
+}
+
+
 function Conversations() {
-  const router = useRouter();
+
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserChat[] | null>(null);
-  const userIdRef = useRef<number | null>(null);
-
   const [searchKey,setSearchKey]=useState<string>("")
-
-  if (typeof window !== "undefined" && window.localStorage) {
-    let storedUserId = localStorage.getItem("supabaseSenderId");
-
-    if (storedUserId) {
-      userIdRef.current = parseInt(storedUserId, 10);
-    }
-  }
+  const hostUserId = 1 ;
+  
 
   const fetchUsers = async () => {
    
     try {
       const { data: userExistsData, error: userExistsError } =
-        await supabaseClient.from("SupabaseUsers").select("id").eq("id", 1);
+        await supabaseClient.from("SupabaseUsers").select("id").eq("id", hostUserId);
 
       if (userExistsError) {
         console.log("user is not exist with id");
@@ -77,12 +79,13 @@ function Conversations() {
       if (userExistsData && userExistsData.length > 0) {
        
           const { data:contactUsers, error:contactUsersError } = await supabaseClient
-         .rpc('get_users_with_latest_message',{user_id:1})
+         .rpc('get_users_with_latest_message',{user_id:hostUserId})
          let contactIds=[];
          let userList:UserChat[]=[];
           if(contactUsers){
             contactIds=await contactUsers.map((user:ContactUsersResponse)=>{
                let newMessage:LatestMessage={
+                id:user.latestMessageId,
                 content:user.latestMessageContent,
                 senderId:user.latestMessageSenderId,
                 receiverId:user.latestMessageReceiverId,
@@ -102,7 +105,7 @@ function Conversations() {
             });
           }
           const { data:nonContactUser, error} = await supabaseClient
-         .rpc('get_users',{contactids:contactIds,userid:2})
+         .rpc('get_users',{contactids:contactIds,userid:hostUserId})
 
           if(nonContactUser){
             await nonContactUser.forEach((user:SupabaseUser)=>{
@@ -118,7 +121,7 @@ function Conversations() {
           }
 
           const {data:unreadCounts,error:unreadCountsError}=await supabaseClient
-          .rpc("get_unread_counts",{user_id:1});
+          .rpc("get_unread_counts",{user_id:hostUserId});
           let unreadMap=new Map();
 
           if(unreadCounts){
@@ -134,13 +137,91 @@ function Conversations() {
       }
     } catch (error: any) {
       console.error("Error fetching users:", error.message);
-      setFetchError("An error occurred while fetching users");
+      setFetchError("An error occurred while fetching users");  
       setUsers(null);
     }
   };
 
-  const handleUsersListSubscription=(payload:any)=>{
-    fetchUsers()
+  const getUserIndex=(userId:number)=>{
+    let index=-1
+    users?.forEach((user,i)=>{
+      if(user.id==userId){
+        index=i 
+      }
+    })
+    return index
+  } 
+
+
+  const reArrangeUserItem=(userId:number,message:SupabaseMessage,unreadChange:number)=>{
+    const newLatest:LatestMessage={
+      id:message.id,
+      content:message.content,
+      senderId:message.senderId,
+      receiverId:message.receiverId,
+      isRead:message.isRead,
+      created_at:message.created_at
+    }
+    setUsers((prevUsers)=>{    
+      if(prevUsers){
+        const newUsers=[...prevUsers]; 
+        const index=prevUsers.findIndex(user=>user.id==userId)
+
+        if(index!=-1){
+          let MovedUser:UserChat=newUsers.splice(index,1)[0];
+          MovedUser.latestMessage=newLatest;
+          MovedUser.pendingCount=MovedUser.pendingCount+unreadChange
+          newUsers.unshift(MovedUser);
+          return newUsers
+        }
+      }
+       return prevUsers
+    })
+  }
+
+  const resetUnreadCount=(userId:number)=>{
+    return userId
+  }
+
+  const updateLatestMessage=(userId:number,message:SupabaseMessage)=>{
+    setUsers((prevUsers)=>{
+      if(prevUsers){
+        return prevUsers.map(user=>{
+          if(user.id==userId&&user.latestMessage?.id==message.id){
+            const updatedMessage:LatestMessage={
+              id:message.id,
+              content:message.content,
+              senderId:message.senderId,
+              receiverId:message.receiverId,
+              isRead:message.isRead,
+              created_at:message.created_at
+            }
+            user.latestMessage=updatedMessage
+          }
+          return user
+        })
+      }
+      return prevUsers;
+    })
+  }
+
+  const handleUsersListSubscription=async (payload:any)=>{
+    if(payload.table=='SupabaseMessages'){
+      const message=payload.new
+      const oldMessage=payload.old;
+      let userId=message.senderId==hostUserId?message.receiverId:message.senderId;
+      if(payload.eventType=="INSERT"){
+        let unreadChange=0;
+        if(message.senderId!=hostUserId&&message.isRead==false){
+          unreadChange=1;
+        }
+        reArrangeUserItem(userId,message,unreadChange);
+      }
+      else if(payload.eventType=="UPDATE"){
+         updateLatestMessage(userId,message)
+      }
+      
+    }
   }
 
   useEffect(() => {
@@ -155,6 +236,8 @@ function Conversations() {
     .subscribe()
 
   }, []);
+  
+
 
   const getFilteredUsers =  ()=>{
     return users?.filter(user=>user.Name?.toLowerCase().includes(searchKey.toLowerCase()))
@@ -175,7 +258,7 @@ function Conversations() {
       </div>
       <div className="flex flex-col overflow-scroll no-scrollbar">
         {getFilteredUsers()?.map((user) => (
-          <UserLink user={user} key={user.id} hostUserId={1}/>
+          <UserLink user={user} key={user.id} hostUserId={hostUserId}/>
         ))}
       </div>
     </div>

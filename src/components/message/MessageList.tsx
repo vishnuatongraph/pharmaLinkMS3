@@ -62,7 +62,6 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
         console.error(error);
         setFetchError(error.message);
       } else {
-        console.log("messages",data)
         setMessages(data || []);
         // Mark received messages as rea
         markMessagesAsRead(data);
