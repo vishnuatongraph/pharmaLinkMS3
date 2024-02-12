@@ -33,46 +33,8 @@ interface RealtimeEvent {
 }
 const UserLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
   const searchParams = useSearchParams();
-  const [latestMessage,setLatestMessage]=useState<{
-       senderId:number,
-       receiverId:number,
-       created_at:string,
-       content:string
-  }|null>(user.latestMessage);
 
-  const [pendingCount,setPendingCount]=useState<number>(user.pendingCount)
   
-  const handleNewMessageSubcription=(payload:any)=>{
-    const message=payload.new
-    const isMessegeByUser=(message.senderId==hostUserId&&message.receiverId==user.id)||(message.receiverId==hostUserId&&message.senderId==user.id);
-    if(isMessegeByUser){
-      setLatestMessage(message)
-    }
-    const isMessageForhost=message.senderId==user.id&&message.receiverId==hostUserId;
-    if(isMessageForhost){
-      if(payload.eventType=="INSERT"){
-        if(!message.isRead){
-          setPendingCount((pendingCount)=>pendingCount+1)
-        }
-      }
-      else if(payload.eventType=="UPDATE"){
-           const oldMessage=payload.old;
-           if(!oldMessage.isRead&&message.isRead){
-           setPendingCount(pendingCount=>pendingCount-1)
-           }
-      }
-    }
-  }
-  useEffect(() => {
-    const channels = supabaseClient.channel(`new-message-event-${user.id}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'SupabaseMessages' },
-        handleNewMessageSubcription
-      )
-      .subscribe()
-  }, [user])
-
   return (
     <Link
       href={`/message?id=${user.id}`}
@@ -91,29 +53,29 @@ const UserLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
           <p className="text-lg font-medium text-[#283030]">
             {user?.Name}
           </p>
-          {latestMessage && <p
-            className={`text-xs font-normal ${pendingCount > 0 ? "text-[#2cbfca]" : "text-[#6c6c6c]"
+          {user.latestMessage && <p
+            className={`text-xs font-normal ${user.pendingCount > 0 ? "text-[#2cbfca]" : "text-[#6c6c6c]"
               }`}
           >
             {"9.00"}
           </p>}
           {/*apply the class if there are any pending messages*/}
         </div>
-        {latestMessage && <div className="flex justify-between align-center">
+        {user.latestMessage && <div className="flex justify-between align-center">
           <div className="flex flex-row gap-x-[5px]">
             {user.latestMessage?.senderId == hostUserId && !user.latestMessage?.isRead && <Image src={doubleTick} alt="sent" />}{" "}
             {/*staus of last message to be checked*/}
-            {latestMessage?.senderId == hostUserId && user.latestMessage?.isRead && <Image src={blueTick} alt="read" />}
+            {user.latestMessage?.senderId == hostUserId && user.latestMessage?.isRead && <Image src={blueTick} alt="read" />}
             {/*status of last message to be checked*/}
             <p className="text-sm font-normal text-[#283030aa]">
-              {latestMessage?.content.length > 18 ? latestMessage.content.substring(0, 15) + "..." : latestMessage.content}
+              {user.latestMessage?.content.length > 18 ? user.latestMessage.content.substring(0, 15) + "..." : user.latestMessage.content}
             </p>
             {/* get the latest message*/}
           </div>
           <div className="flex justiy-center align-center">
-            {pendingCount > 0 && (
+            {user.pendingCount > 0 && (
               <p className="bg-[#2cbfca] text-sm font-normal text-white h-5 w-5 text-center rounded-[50%]">
-                {pendingCount}
+                {user.pendingCount}
               </p>
             )}{" "}
             {/*check if there are pending messages and its count*/}

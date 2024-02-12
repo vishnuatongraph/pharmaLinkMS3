@@ -23,6 +23,25 @@ interface UserChat{
 
 }
 
+interface ContactUsersResponse{
+  Id:number,
+  Name:string,
+  profileUrl:string,
+  latestMessageContent:string,
+  latestMessageSenderId:number,
+  latestMessageReceiverId:number,
+  latestMessageIsRead:boolean,
+  latestMessageCreatedAt:string
+}
+
+interface SupabaseUser{
+  id:number,
+  Name:string,
+  profileUrl:string,
+  isActive:boolean,
+  created_at:string
+}
+
 function Conversations() {
   const router = useRouter();
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -62,8 +81,7 @@ function Conversations() {
          let contactIds=[];
          let userList:UserChat[]=[];
           if(contactUsers){
-            console.log("contact users",contactUsers)
-            contactIds=await contactUsers.map((user:any)=>{
+            contactIds=await contactUsers.map((user:ContactUsersResponse)=>{
                let newMessage:LatestMessage={
                 content:user.latestMessageContent,
                 senderId:user.latestMessageSenderId,
@@ -84,17 +102,10 @@ function Conversations() {
             });
           }
           const { data:nonContactUser, error} = await supabaseClient
-         .rpc('get_users',{contactids:contactIds,userid:1})
-
-          if(error){
-            console.log(error)
-          }
-          if(contactUsersError){
-            console.log(contactUsersError)
-          }
+         .rpc('get_users',{contactids:contactIds,userid:2})
 
           if(nonContactUser){
-            await nonContactUser.forEach((user:any)=>{
+            await nonContactUser.forEach((user:SupabaseUser)=>{
               let newUser:UserChat={
                 id:user.id,
                 Name:user.Name,
@@ -105,18 +116,17 @@ function Conversations() {
                userList.push(newUser);
             })
           }
-          console.log("userList",userList)
 
           const {data:unreadCounts,error:unreadCountsError}=await supabaseClient
           .rpc("get_unread_counts",{user_id:1});
           let unreadMap=new Map();
+
           if(unreadCounts){
-            console.log(unreadCounts)
-            unreadCounts.forEach((count:any) => {
+            unreadCounts.forEach((count:{SupabaseUsers_id:number,unread_count:number}) => {
               unreadMap.set(count.SupabaseUsers_id,count.unread_count)
             });
           }
-          console.log(unreadMap)
+
           userList.forEach(user=>{
             user.pendingCount=unreadMap.get(user.id);
           })
@@ -129,9 +139,20 @@ function Conversations() {
     }
   };
 
+  const handleUsersListSubscription=(payload:any)=>{
+    fetchUsers()
+  }
+
   useEffect(() => {
     fetchUsers();
-  //  fetchConversations();
+    
+    const channels = supabaseClient.channel(`UserListSubscription`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'SupabaseMessages' },
+      handleUsersListSubscription
+    )
+    .subscribe()
 
   }, []);
 
