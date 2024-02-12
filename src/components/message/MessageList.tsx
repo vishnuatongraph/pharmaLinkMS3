@@ -16,13 +16,21 @@ interface RealtimeEvent {
  interface MessageListProps{
   searchKey:string
  }
+ interface Message{
+   id:number,
+   content:string,
+   senderId:number,
+   receiverId:number,
+   isRead:boolean,
+   created_at:string
+ }
 
 
 const MessageList:React.FC<MessageListProps>=({searchKey})=>{
   const searchParams = useSearchParams();
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  // const [prevDate, setPrevDate] = useState<any>();
+  const [messages, setMessages] = useState<Message[]>([]);
+
   const userIdRef = 1; //useRef<number | null>(null);
   let prevDate: string;
 
@@ -54,6 +62,7 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
         console.error(error);
         setFetchError(error.message);
       } else {
+        console.log("messages",data)
         setMessages(data || []);
         // Mark received messages as rea
         markMessagesAsRead(data);
@@ -67,13 +76,13 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
   const getMessages=()=>{
     return messages.filter(message=>message.content.toLowerCase().includes(searchKey.toLowerCase()))
   }
-  const markMessagesAsRead = async (messagesToMarkAsRead: any) => {
+  const markMessagesAsRead = async (messagesToMarkAsRead: Message[]) => {
     const unreadMessages = messagesToMarkAsRead.filter(
-      (msg: any) => msg.receiverId === userIdRef && !msg.isRead
+      (msg: Message) => msg.receiverId === userIdRef && !msg.isRead
     );
 
     if (unreadMessages.length > 0) {
-      const messageIds = unreadMessages.map((msg: any) => msg.id);
+      const messageIds = unreadMessages.map((msg: Message) => msg.id);
 
       try {
         await supabaseClient
