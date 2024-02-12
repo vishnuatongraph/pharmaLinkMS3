@@ -1,4 +1,3 @@
-import "./MessageList.css";
 import doubleTick from "../../../public/images/tick.svg";
 import blueTick from "../../../public/images/blueTick.svg";
 import Image from "next/image";

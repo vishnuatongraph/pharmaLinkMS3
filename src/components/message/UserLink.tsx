@@ -7,6 +7,7 @@ import blueTick from "../../../public/images/blueTick.svg";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useEffect, useState } from "react";
 import { handleClientScriptLoad } from "next/script";
+import moment from "moment";
 
 interface ConvoLinkProps {
   user: {
@@ -37,6 +38,8 @@ const UserLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
   useEffect(()=>{
 
   },[user])
+
+  
   
   return (
     <Link
@@ -60,8 +63,8 @@ const UserLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
             className={`text-xs font-normal ${user.pendingCount > 0 ? "text-[#2cbfca]" : "text-[#6c6c6c]"
               }`}
           >
-            {"9.00"}
-          </p>}
+            {moment(user.latestMessage.created_at).format("HH:mm")}
+          </p>} 
           {/*apply the class if there are any pending messages*/}
         </div>
         {user.latestMessage && <div className="flex justify-between align-center">

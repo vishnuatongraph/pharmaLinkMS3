@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useEffect,useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import UserLink from "./UserLink";
+import { useRouter, useSearchParams } from "next/navigation";
+
 
 interface LatestMessage{
   id:number,
@@ -53,15 +55,16 @@ interface SupabaseMessage{
 
 
 function Conversations() {
-
+  const router=useRouter();
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserChat[] | null>(null);
-  const [searchKey,setSearchKey]=useState<string>("")
+  const [searchKey,setSearchKey]=useState<string>("");
+  const receiverId=useSearchParams().get("id");
   const hostUserId = 1 ;
   
 
   const fetchUsers = async () => {
-   
+
     try {
       const { data: userExistsData, error: userExistsError } =
         await supabaseClient.from("SupabaseUsers").select("id").eq("id", hostUserId);
@@ -133,6 +136,7 @@ function Conversations() {
           userList.forEach(user=>{
             user.pendingCount=unreadMap.get(user.id);
           })
+          router.push(`/message?id=${userList[0].id}`)
           setUsers(userList)
       }
     } catch (error: any) {
@@ -205,6 +209,20 @@ function Conversations() {
     })
   }
 
+  const resetPendingCount=()=>{
+    console.log(receiverId);
+    setUsers(prevUsers=>{
+      if(prevUsers){
+        return prevUsers.map(user=>{
+          if(user.id.toString()==receiverId){
+             user.pendingCount=0;
+          }
+          return user
+        })
+      }
+      return prevUsers;
+    })
+  }
   const handleUsersListSubscription=async (payload:any)=>{
     if(payload.table=='SupabaseMessages'){
       const message=payload.new
@@ -212,7 +230,7 @@ function Conversations() {
       let userId=message.senderId==hostUserId?message.receiverId:message.senderId;
       if(payload.eventType=="INSERT"){
         let unreadChange=0;
-        if(message.senderId!=hostUserId&&message.isRead==false){
+        if(message.senderId!=hostUserId&&message.isRead==false&&userId.toString()!=receiverId){
           unreadChange=1;
         }
         reArrangeUserItem(userId,message,unreadChange);
@@ -226,7 +244,6 @@ function Conversations() {
 
   useEffect(() => {
     fetchUsers();
-    
     const channels = supabaseClient.channel(`UserListSubscription`)
     .on(
       'postgres_changes',
@@ -237,7 +254,9 @@ function Conversations() {
 
   }, []);
   
-
+  useEffect(()=>{
+    resetPendingCount();
+  },[receiverId])
 
   const getFilteredUsers =  ()=>{
     return users?.filter(user=>user.Name?.toLowerCase().includes(searchKey.toLowerCase()))
