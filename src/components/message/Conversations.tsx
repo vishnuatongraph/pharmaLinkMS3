@@ -28,7 +28,6 @@ function Conversations() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserChat[] | null>(null);
   const userIdRef = useRef<number | null>(null);
-  const [conversations,setConversations]=useState<any[]|null>(null)
 
   const [searchKey,setSearchKey]=useState<string>("")
 
@@ -107,6 +106,20 @@ function Conversations() {
             })
           }
           console.log("userList",userList)
+
+          const {data:unreadCounts,error:unreadCountsError}=await supabaseClient
+          .rpc("get_unread_counts",{user_id:1});
+          let unreadMap=new Map();
+          if(unreadCounts){
+            console.log(unreadCounts)
+            unreadCounts.forEach((count:any) => {
+              unreadMap.set(count.SupabaseUsers_id,count.unread_count)
+            });
+          }
+          console.log(unreadMap)
+          userList.forEach(user=>{
+            user.pendingCount=unreadMap.get(user.id);
+          })
           setUsers(userList)
       }
     } catch (error: any) {
@@ -122,8 +135,8 @@ function Conversations() {
 
   }, []);
 
-  const getFilteredConversations =  ()=>{
-    return conversations?.filter(convo=>convo.name?.toLowerCase().includes(searchKey.toLowerCase()))
+  const getFilteredUsers =  ()=>{
+    return users?.filter(user=>user.Name?.toLowerCase().includes(searchKey.toLowerCase()))
   }
   
 
@@ -140,7 +153,7 @@ function Conversations() {
         />
       </div>
       <div className="flex flex-col overflow-scroll no-scrollbar">
-        {users?.map((user) => (
+        {getFilteredUsers()?.map((user) => (
           <UserLink user={user} key={user.id} hostUserId={1}/>
         ))}
       </div>
