@@ -8,7 +8,7 @@ import sendIcon from "../../../public/images/send.svg";
 import imageIcon from "../../../public/images/image.svg";
 import emojiIcon from "../../../public/images/emoji.svg";
 import MessageList from "./MessageList";
-import { useEffect, useRef, useState } from "react";
+import { useEffect,useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 import closeIcon from "../../../public/images/close.png"
@@ -21,7 +21,7 @@ interface RealtimeEvent {
   schema: String;
 }
 
-function Chat() {
+const Chat:React.FC<{hostUserId:number}>=({hostUserId})=> {
   const searchParams = useSearchParams();
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchVisible,setSearchVisilbe]=useState<boolean>(false);
@@ -35,15 +35,7 @@ function Chat() {
     isActive:boolean
   } | null>(null);
   const [message, setMessage] = useState("");
-  const userIdRef = useRef<Number | null>(null);
 
-  if (typeof window !== "undefined" && window.localStorage) {
-    let storedUserId = localStorage.getItem("supabaseSenderId");
-
-    if (storedUserId) {
-      userIdRef.current = parseInt(storedUserId, 10);
-    }
-  }
 
   const fetchUser = async () => {
     if (searchParams.get("id")) {
@@ -97,7 +89,7 @@ const channels = supabaseClient.channel('custom-update-channel')
       try {
         const res = await supabaseClient.from("SupabaseMessages").insert([
           {
-            senderId: 1,
+            senderId: hostUserId,
             receiverId: searchParams.get("id"),
             content: message,
           },
@@ -164,7 +156,7 @@ const channels = supabaseClient.channel('custom-update-channel')
             </div>
           </div>
           <div className="bg-neutral-100 border-r-[#28303033] border-r border-solid max-h-[70vh] overflow-auto relative">
-            <MessageList searchKey={searchKey}/>
+            <MessageList searchKey={searchKey} hostUserId={hostUserId}/>
           </div>
           <div className="relative">
              {showPicker&& <div className="absolute bottom-[90px] left-[30px]">

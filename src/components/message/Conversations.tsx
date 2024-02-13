@@ -54,13 +54,12 @@ interface SupabaseMessage{
 }
 
 
-function Conversations() {
+const Conversations:React.FC<{hostUserId:number}>=({hostUserId})=>{
   const router=useRouter();
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserChat[] | null>(null);
   const [searchKey,setSearchKey]=useState<string>("");
   const receiverId=useSearchParams().get("id");
-  const hostUserId = 1 ;
   
 
   const fetchUsers = async () => {
@@ -252,8 +251,9 @@ function Conversations() {
     )
     .subscribe()
 
-  }, []);
+  }, [hostUserId]);
   
+
   useEffect(()=>{
     resetPendingCount();
   },[receiverId])

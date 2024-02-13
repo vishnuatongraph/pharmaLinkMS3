@@ -4,29 +4,31 @@ import Conversations from "./Conversations";
 import Chat from "./Chat";
 import { supabaseClient } from "@/lib/supabaseClient";
 
-export default function Messages() {
+const Messages:React.FC<{hostUserId:number}>=({hostUserId})=> {
 
+  
   const setUserActive=async()=>{
     const { data, error } = await supabaseClient
   .from('SupabaseUsers')
   .update({ isActive:true })
-  .eq('id',1)
+  .eq('id',hostUserId)
   .select()
   }
 
   const setUserInactive=async()=>{
+    console.log("setting user inactive")
     const { data, error } = await supabaseClient
   .from('SupabaseUsers')
   .update({ isActive:false })
-  .eq('id',1)
+  .eq('id',hostUserId)
   .select()
   }
 
   useEffect(()=>{
     setUserActive()
-
+    window.addEventListener("unload",setUserInactive);
     return(()=>{
-      setUserInactive()
+      window.removeEventListener("unload",setUserInactive)
     })
   },[])
   return (
@@ -36,12 +38,14 @@ export default function Messages() {
           <p className="text-2xl text-[#283030] font-semibold">Messages</p>
         </div>
         <div className="convo-cont overflow-hidden">
-          <Conversations />
+          <Conversations hostUserId={hostUserId} />
         </div>
       </div>
       <div className="h-full overflow-hidden">
-      <Chat />
+      <Chat hostUserId={hostUserId} />
       </div>
     </div>
   );
 }
+
+export default Messages

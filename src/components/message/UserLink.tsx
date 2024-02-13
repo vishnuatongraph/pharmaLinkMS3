@@ -4,9 +4,7 @@ import { useSearchParams } from "next/navigation"
 import profile1 from "../../../public/images/profile1.svg";
 import doubleTick from "../../../public/images/tick.svg";
 import blueTick from "../../../public/images/blueTick.svg";
-import { supabaseClient } from "@/lib/supabaseClient";
-import { useEffect, useState } from "react";
-import { handleClientScriptLoad } from "next/script";
+import { useEffect} from "react";
 import moment from "moment";
 
 interface ConvoLinkProps {
@@ -23,7 +21,7 @@ interface ConvoLinkProps {
     }|null,
     pendingCount:number
   },
-  hostUserId: number
+  hostUserId: number|undefined
 }
 
 interface RealtimeEvent {
