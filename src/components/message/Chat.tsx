@@ -11,7 +11,6 @@ import MessageList from "./MessageList";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
-import "./chat.css"
 import closeIcon from "../../../public/images/close.png"
 import EmojiPicker from "emoji-picker-react"
 

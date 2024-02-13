@@ -173,7 +173,7 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
           <div className="flex flex-col gap-y-2.5"  key={message.id}>
             {showDate && <div className="self-center text-base font-normal text-[#28303088] my-5">{currentFullTime}</div>}
             <div
-              className={`w-fit flex flex-col max-w-[60%] items-end p-0
+              className={`w-fit flex flex-col max-w-[60%] items-end p-0 break-words
                        ${
                          message.senderId == userIdRef
                            ? "self-end"
@@ -182,7 +182,7 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
         `}
             >
               <p
-                className={`text-base font-normal text-[#001c3cbb] p-2.5 rounded-[10px]
+                className={`text-base font-normal text-[#001c3cbb] p-2.5 rounded-[10px] max-w-[100%]
                        ${
                          message.senderId == userIdRef
                            ? "bg-[#2cbfca55]"
