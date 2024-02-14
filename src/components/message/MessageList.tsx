@@ -8,7 +8,7 @@ import moment from "moment";
 
 interface RealtimeEvent {
   table: string;
-  type: string;
+  eventType: string;
   new: any;
   schema: String;
 }
@@ -111,22 +111,19 @@ const MessageList:React.FC<MessageListProps>=({searchKey,hostUserId})=>{
       markMessagesAsRead(newMessage);
     }
 
-    if (!isNewMessageExist && isMessageForReceiver) {
+    if (!isNewMessageExist && isMessageForReceiver&&event.eventType=="INSERT") {
       // Insert new message into the state
 
-     
       setMessages(prevMessage=>{
-        if(prevMessage[prevMessage.length-1].id==event.new.id){
-          console.log("no update")
+        if(prevMessage[prevMessage.length-1]?.id==event.new.id){
           return [...prevMessage]
         }
         else{
-          console.log("update")
           return [...prevMessage,event.new]
         }
         
       })
-    } else if (isMessageForReceiver && event.type === "UPDATE") {
+    } else if (isMessageForReceiver && event.eventType === "UPDATE") {
       // Update existing message in the state
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
