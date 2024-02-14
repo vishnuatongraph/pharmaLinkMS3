@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation"
 import profile1 from "../../../public/images/profile1.svg";
 import doubleTick from "../../../public/images/tick.svg";
 import blueTick from "../../../public/images/blueTick.svg";
-import { useEffect} from "react";
+import { Dispatch, SetStateAction, useEffect} from "react";
 import moment from "moment";
 
 interface ConvoLinkProps {
@@ -21,7 +21,8 @@ interface ConvoLinkProps {
     }|null,
     pendingCount:number
   },
-  hostUserId: number|undefined
+  hostUserId: number|undefined,
+  setShowChat:Dispatch<SetStateAction<boolean>>
 }
 
 interface RealtimeEvent {
@@ -30,7 +31,7 @@ interface RealtimeEvent {
   new: any;
   schema: String;
 }
-const UserLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
+const UserLink: React.FC<ConvoLinkProps> = ({ user, hostUserId,setShowChat }) => {
   const searchParams = useSearchParams();
 
   useEffect(()=>{
@@ -45,6 +46,9 @@ const UserLink: React.FC<ConvoLinkProps> = ({ user, hostUserId }) => {
       className={`grid flex-row grid-cols-[60px_auto] w-full mt-2.5 rounded-[10px] p-[10px] ${searchParams.get("id") == user.id+"" ? "bg-[#2cbfca22]" : ""
         }`}
       key={user.id}
+      onClick={()=>{setTimeout(() => {
+        setShowChat(true)
+      },1000);}}
     >
       {" "}
       {/*check if this is the active convo*/}

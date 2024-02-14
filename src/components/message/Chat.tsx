@@ -7,9 +7,10 @@ import optionsIcon from "../../../public/images/optionsIcon.svg";
 import sendIcon from "../../../public/images/send.svg";
 import imageIcon from "../../../public/images/image.svg";
 import emojiIcon from "../../../public/images/emoji.svg";
+import leftArrow from "../../../public/images/leftArrow.svg"
 import MessageList from "./MessageList";
-import { useEffect,useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Dispatch, SetStateAction, useEffect,useState } from "react";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 import closeIcon from "../../../public/images/close.png"
 import EmojiPicker from "emoji-picker-react"
@@ -21,13 +22,14 @@ interface RealtimeEvent {
   schema: String;
 }
 
-const Chat:React.FC<{hostUserId:number}>=({hostUserId})=> {
+const Chat:React.FC<{hostUserId:number,setShowChat:Dispatch<SetStateAction<boolean>>}>=({hostUserId,setShowChat})=> {
   const searchParams = useSearchParams();
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchVisible,setSearchVisilbe]=useState<boolean>(false);
   const [searchKey,setSearchKey]=useState<string>("");
   const [showPicker,setShowPicker]=useState<boolean>(false);
   const [isActive,setIsActive]=useState<boolean>(false);
+  const router=useRouter()
   const [user, setUser] = useState<{
     Name: string;
     id: number;
@@ -85,6 +87,7 @@ const channels = supabaseClient.channel('custom-update-channel')
 
   const sendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setShowPicker(false)
     if (message.trim().length !== 0) {
       try {
         const res = await supabaseClient.from("SupabaseMessages").insert([
@@ -117,15 +120,20 @@ const channels = supabaseClient.channel('custom-update-channel')
     <>
       {user && (
         <div className="grid grid-rows-[90px_auto_90px] h-full w-full">
-      
           <div className="bg-white border-b-[#28303033] border-b border-solid flex justify-between items-center px-5 z-[5]">
-            <div className="flex flex-row gap-x-5">
-              <div className="h-11 w-11 overflow-hidden rounded-[50%]">
+            <div className="flex flex-row gap-x-5 max-sm:gap-x-2">
+              <button className="sm:hidden h-11 w-11 overflow-hidden rounded-[50%] flex justify-center items-center border border-solid border-[#28303022]"
+                  onClick={()=>{setShowChat(false);router.push("/message") }
+                }
+              >
+                 <Image src={leftArrow} alt="back" height={15} width={15} />
+              </button>
+              <div className={`h-11 w-11 overflow-hidden rounded-[50%] border border-solid border-[#28303022] ${searchVisible?"max-sm:hidden":""}`}>
                {!user.profileUrl&&<Image src={activeProfile} alt="profile" />}
                {user.profileUrl&&<Image src={user.profileUrl} alt="profile" height={100} width={100}/>}
               </div>
-              <div className="flex flex-col">
-                <p className="text-lg font-semibold text-black">{user?.Name}</p>
+              <div className={`flex flex-col justify-center ${searchVisible?"max-sm:hidden":""}`}>
+                <p className="text-lg font-semibold text-black max-sm:text-sm">{user?.Name}</p>
                {isActive&&<p className="text-sm font-normal text-[#2cbfca]">Active now</p>}
               </div>
             </div>
@@ -134,7 +142,7 @@ const channels = supabaseClient.channel('custom-update-channel')
                               ${searchVisible?"bg-[#f3f3f3]":"bg-[#ffffff]"}
               `}>
 
-               {searchVisible&&<input type="text"  className="bg-[#00000000] no-outline pl-[10px] transition-[0.5s] text-[#283030aa]" placeholder="Search Messages "
+               {searchVisible&&<input type="text"  className="bg-[#00000000] no-outline pl-[10px] transition-[0.5s] text-[#283030aa] max-sm:max-w-[40vw] sm:max-w-[20vw]" placeholder="Search Messages "
                   onChange={(e)=>{
                     setSearchKey(e.target.value)
                   }}

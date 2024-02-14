@@ -1,7 +1,7 @@
 "use client";
 import searchIcon from "../../../public/images/search.svg";
 import Image from "next/image";
-import { useEffect,useState } from "react";
+import { Dispatch, SetStateAction, useEffect,useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import UserLink from "./UserLink";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -54,12 +54,12 @@ interface SupabaseMessage{
 }
 
 
-const Conversations:React.FC<{hostUserId:number}>=({hostUserId})=>{
+const Conversations:React.FC<{hostUserId:number,setShowChat:Dispatch<SetStateAction<boolean>>}>=({hostUserId,setShowChat})=>{
   const router=useRouter();
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserChat[] | null>(null);
   const [searchKey,setSearchKey]=useState<string>("");
-  const receiverId=useSearchParams().get("id");
+  const searchParams=useSearchParams();
   
 
   const fetchUsers = async () => {
@@ -182,10 +182,6 @@ const Conversations:React.FC<{hostUserId:number}>=({hostUserId})=>{
     })
   }
 
-  const resetUnreadCount=(userId:number)=>{
-    return userId
-  }
-
   const updateLatestMessage=(userId:number,message:SupabaseMessage)=>{
     setUsers((prevUsers)=>{
       if(prevUsers){
@@ -209,11 +205,10 @@ const Conversations:React.FC<{hostUserId:number}>=({hostUserId})=>{
   }
 
   const resetPendingCount=()=>{
-    console.log(receiverId);
     setUsers(prevUsers=>{
       if(prevUsers){
         return prevUsers.map(user=>{
-          if(user.id.toString()==receiverId){
+          if(user.id.toString()==searchParams.get('id')){
              user.pendingCount=0;
           }
           return user
@@ -229,7 +224,7 @@ const Conversations:React.FC<{hostUserId:number}>=({hostUserId})=>{
       let userId=message.senderId==hostUserId?message.receiverId:message.senderId;
       if(payload.eventType=="INSERT"){
         let unreadChange=0;
-        if(message.senderId!=hostUserId&&message.isRead==false&&userId.toString()!=receiverId){
+        if(message.senderId!=hostUserId&&message.isRead==false&&userId.toString()!=searchParams.get("id")){
           unreadChange=1;
         }
         reArrangeUserItem(userId,message,unreadChange);
@@ -256,7 +251,7 @@ const Conversations:React.FC<{hostUserId:number}>=({hostUserId})=>{
 
   useEffect(()=>{
     resetPendingCount();
-  },[receiverId])
+  },[searchParams])
 
   const getFilteredUsers =  ()=>{
     return users?.filter(user=>user.Name?.toLowerCase().includes(searchKey.toLowerCase()))
@@ -277,7 +272,7 @@ const Conversations:React.FC<{hostUserId:number}>=({hostUserId})=>{
       </div>
       <div className="flex flex-col overflow-scroll no-scrollbar">
         {getFilteredUsers()?.map((user) => (
-          <UserLink user={user} key={user.id} hostUserId={hostUserId}/>
+          <UserLink user={user} key={user.id} hostUserId={hostUserId} setShowChat={setShowChat}/>
         ))}
       </div>
     </div>
