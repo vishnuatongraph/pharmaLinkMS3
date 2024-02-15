@@ -1,4 +1,3 @@
-import "./MessageList.css";
 import doubleTick from "../../../public/images/tick.svg";
 import blueTick from "../../../public/images/blueTick.svg";
 import Image from "next/image";
@@ -9,21 +8,29 @@ import moment from "moment";
 
 interface RealtimeEvent {
   table: string;
-  type: string;
+  eventType: string;
   new: any;
   schema: String;
 }
  interface MessageListProps{
-  searchKey:string
+  searchKey:string,
+  hostUserId:number
+ }
+ interface Message{
+   id:number,
+   content:string,
+   senderId:number,
+   receiverId:number,
+   isRead:boolean,
+   created_at:string
  }
 
 
-const MessageList:React.FC<MessageListProps>=({searchKey})=>{
+const MessageList:React.FC<MessageListProps>=({searchKey,hostUserId})=>{
   const searchParams = useSearchParams();
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  // const [prevDate, setPrevDate] = useState<any>();
-  const userIdRef = 1; //useRef<number | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+
   let prevDate: string;
 
   const listRef=useRef<HTMLDivElement|null>(null)
@@ -42,11 +49,11 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
         .from("SupabaseMessages")
         .select("*")
         .or(
-          `and(senderId.eq.${userIdRef},receiverId.eq.${searchParams.get(
+          `and(senderId.eq.${hostUserId},receiverId.eq.${searchParams.get(
             "id"
           )}),and(senderId.eq.${searchParams.get(
             "id"
-          )},receiverId.eq.${userIdRef})`
+          )},receiverId.eq.${hostUserId})`
         )
         .order("created_at", { ascending: true });
 
@@ -67,13 +74,13 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
   const getMessages=()=>{
     return messages.filter(message=>message.content.toLowerCase().includes(searchKey.toLowerCase()))
   }
-  const markMessagesAsRead = async (messagesToMarkAsRead: any) => {
+  const markMessagesAsRead = async (messagesToMarkAsRead: Message[]) => {
     const unreadMessages = messagesToMarkAsRead.filter(
-      (msg: any) => msg.receiverId === userIdRef && !msg.isRead
+      (msg: Message) => msg.receiverId === hostUserId && !msg.isRead
     );
 
     if (unreadMessages.length > 0) {
-      const messageIds = unreadMessages.map((msg: any) => msg.id);
+      const messageIds = unreadMessages.map((msg: Message) => msg.id);
 
       try {
         await supabaseClient
@@ -93,10 +100,10 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
   ): any => {
     const isNewMessageExist = messages.some((msg) => msg.id === event.new.id);
     const isMessageForReceiver =
-      (event.new.senderId == userIdRef &&
+      (event.new.senderId == hostUserId &&
         event.new.receiverId == searchParams.get("id")) ||
       (event.new.senderId == searchParams.get("id") &&
-        event.new.receiverId == userIdRef);
+        event.new.receiverId == hostUserId);
     const newMessage = [event.new]
 
 
@@ -104,22 +111,19 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
       markMessagesAsRead(newMessage);
     }
 
-    if (!isNewMessageExist && isMessageForReceiver) {
+    if (!isNewMessageExist && isMessageForReceiver&&event.eventType=="INSERT") {
       // Insert new message into the state
 
-     
       setMessages(prevMessage=>{
-        if(prevMessage[prevMessage.length-1].id==event.new.id){
-          console.log("no update")
+        if(prevMessage[prevMessage.length-1]?.id==event.new.id){
           return [...prevMessage]
         }
         else{
-          console.log("update")
           return [...prevMessage,event.new]
         }
         
       })
-    } else if (isMessageForReceiver && event.type === "UPDATE") {
+    } else if (isMessageForReceiver && event.eventType === "UPDATE") {
       // Update existing message in the state
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
@@ -166,18 +170,18 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
           <div className="flex flex-col gap-y-2.5"  key={message.id}>
             {showDate && <div className="self-center text-base font-normal text-[#28303088] my-5">{currentFullTime}</div>}
             <div
-              className={`w-fit flex flex-col max-w-[60%] items-end p-0
+              className={`w-fit flex flex-col max-w-[60%] items-end p-0 break-words
                        ${
-                         message.senderId == userIdRef
+                         message.senderId == hostUserId
                            ? "self-end"
                            : "self-start"
                        }
         `}
             >
               <p
-                className={`text-base font-normal text-[#001c3cbb] p-2.5 rounded-[10px]
+                className={`text-base font-normal text-[#001c3cbb] p-2.5 rounded-[10px] max-w-[100%]
                        ${
-                         message.senderId == userIdRef
+                         message.senderId == hostUserId
                            ? "bg-[#2cbfca55]"
                            : "bg-white"
                        }
@@ -189,10 +193,10 @@ const MessageList:React.FC<MessageListProps>=({searchKey})=>{
                 <p className="text-sm font-normal text-[#28303088]">
                   {moment(message.created_at).format("hh:mm A")}
                 </p>
-                {message.senderId == userIdRef && !message.isRead && (
+                {message.senderId == hostUserId && !message.isRead && (
                   <Image src={doubleTick} alt=""></Image>
                 )}
-                {message.senderId == userIdRef && message.isRead && (
+                {message.senderId == hostUserId && message.isRead && (
                   <Image src={blueTick} alt=""></Image>
                 )}
               </div>
