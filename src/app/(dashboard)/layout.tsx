@@ -15,7 +15,7 @@ export default function layout({ children }: { children: React.ReactNode }) {
         <DashSidebar sidebarData={PharmasistDashSidebar} />
         </div>
         <DashHeader profilePic={OwnerDashHeaderData.profilePic} />
-        <div className="flex flex-col w-full h-[100vh] bg-[#F3F3F3] pt-[84px] md:pl-[20%] pb-[20px] transition-all duration-[0.5s]">
+        <div className="flex flex-col w-full h-[100vh] bg-[#F3F3F3] pt-[84px] md:pl-[20%] transition-all duration-[0.5s]">
           {children}
         </div>
       </div>

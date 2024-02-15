@@ -170,7 +170,7 @@ const channels = supabaseClient.channel('custom-update-channel')
              {showPicker&& <div className="absolute bottom-[90px] left-[30px]">
                 <EmojiPicker height={300} width={400} searchDisabled onEmojiClick={handleEmojiSelection}/>
               </div>}
-          <div className="bg-white border-t-[#28303033] border-t border-solid grid grid-cols-[100px_auto_60px] gap-x-5 h-full w-full">
+          <div className="bg-white border-t-[#28303033] border-t border-solid grid grid-cols-[100px_auto_60px] gap-x-5 max-sm:gap-x-2 h-full w-full">
             <div className="flex items-center gap-x-5 pl-5 relative overflow-hidden">
               <button className="flex justify-center items-center h-6 w-6" 
                onClick={()=>{setShowPicker(!showPicker)}}
