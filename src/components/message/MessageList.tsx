@@ -12,28 +12,27 @@ interface RealtimeEvent {
   new: any;
   schema: String;
 }
- interface MessageListProps{
-  searchKey:string,
-  hostUserId:number
- }
- interface Message{
-   id:number,
-   content:string,
-   senderId:number,
-   receiverId:number,
-   isRead:boolean,
-   created_at:string
- }
+interface MessageListProps {
+  searchKey: string;
+  hostUserId: number;
+}
+interface Message {
+  id: number;
+  content: string;
+  senderId: number;
+  receiverId: number;
+  isRead: boolean;
+  created_at: string;
+}
 
-
-const MessageList:React.FC<MessageListProps>=({searchKey,hostUserId})=>{
+const MessageList: React.FC<MessageListProps> = ({ searchKey, hostUserId }) => {
   const searchParams = useSearchParams();
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
 
   let prevDate: string;
 
-  const listRef=useRef<HTMLDivElement|null>(null)
+  const listRef = useRef<HTMLDivElement | null>(null);
   // if (typeof window !== "undefined" && window.localStorage) {
   //   let storedUserId = localStorage.getItem("supabaseSenderId");
 
@@ -42,7 +41,6 @@ const MessageList:React.FC<MessageListProps>=({searchKey,hostUserId})=>{
   //   }
   // }
 
- 
   const fetchMessages = async () => {
     try {
       const { data, error } = await supabaseClient
@@ -71,9 +69,11 @@ const MessageList:React.FC<MessageListProps>=({searchKey,hostUserId})=>{
     }
   };
 
-  const getMessages=()=>{
-    return messages.filter(message=>message.content.toLowerCase().includes(searchKey.toLowerCase()))
-  }
+  const getMessages = () => {
+    return messages.filter((message) =>
+      message.content.toLowerCase().includes(searchKey.toLowerCase())
+    );
+  };
   const markMessagesAsRead = async (messagesToMarkAsRead: Message[]) => {
     const unreadMessages = messagesToMarkAsRead.filter(
       (msg: Message) => msg.receiverId === hostUserId && !msg.isRead
@@ -104,25 +104,26 @@ const MessageList:React.FC<MessageListProps>=({searchKey,hostUserId})=>{
         event.new.receiverId == searchParams.get("id")) ||
       (event.new.senderId == searchParams.get("id") &&
         event.new.receiverId == hostUserId);
-    const newMessage = [event.new]
-
+    const newMessage = [event.new];
 
     if (event.new.senderId == searchParams.get("id")) {
       markMessagesAsRead(newMessage);
     }
 
-    if (!isNewMessageExist && isMessageForReceiver&&event.eventType=="INSERT") {
+    if (
+      !isNewMessageExist &&
+      isMessageForReceiver &&
+      event.eventType == "INSERT"
+    ) {
       // Insert new message into the state
 
-      setMessages(prevMessage=>{
-        if(prevMessage[prevMessage.length-1]?.id==event.new.id){
-          return [...prevMessage]
+      setMessages((prevMessage) => {
+        if (prevMessage[prevMessage.length - 1]?.id == event.new.id) {
+          return [...prevMessage];
+        } else {
+          return [...prevMessage, event.new];
         }
-        else{
-          return [...prevMessage,event.new]
-        }
-        
-      })
+      });
     } else if (isMessageForReceiver && event.eventType === "UPDATE") {
       // Update existing message in the state
       setMessages((prevMessages) =>
@@ -136,27 +137,44 @@ const MessageList:React.FC<MessageListProps>=({searchKey,hostUserId})=>{
   useEffect(() => {
     fetchMessages();
     const subscription = supabaseClient
-    .channel("RealtimeSubscription")
-    .on(
-      "postgres_changes" as any,
-      { event: "*", schema: "public", table: "SupabaseMessages" } as any,
-      handleSubscription as any
-    )
-    .subscribe();
+      .channel("RealtimeSubscription")
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "SupabaseMessages" } as any,
+        handleSubscription as any
+      )
+      .subscribe();
 
-  return () => {
-    subscription.unsubscribe();
-  };
-   
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [searchParams]);
 
-  useLayoutEffect(()=>{
-     if(listRef.current){
-      listRef.current.lastElementChild?.scrollIntoView()
-     }
-  },[messages])
+  useLayoutEffect(() => {
+    if (listRef.current) {
+      listRef.current.lastElementChild?.scrollIntoView();
+    }
+  }, [messages]);
+
+  function isValidImageUrl(url: string) {
+    // Check if the string is a valid URL
+    try {
+      new URL(url);
+    } catch (error) {
+      return false;
+    }
+    // Check if the URL ends with a known image extension
+    const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp"];
+    const extension = url?.split(".")?.pop()?.toLowerCase() || "";
+    return imageExtensions.includes(extension);
+  }
+
   return (
-    <div ref={listRef} className="w-full pl-2.5 pr-5 py-2.5 flex flex-col gap-y-2.5 overflow-auto no-scrollbar" id="message-cont">
+    <div
+      ref={listRef}
+      className="w-full pl-2.5 pr-5 py-2.5 flex flex-col gap-y-2.5 overflow-auto no-scrollbar"
+      id="message-cont"
+    >
       {getMessages()?.map((message, index) => {
         const currentFullTime = moment(message.created_at).format(
           "DD MMM ddd [at] h:mm A"
@@ -167,8 +185,12 @@ const MessageList:React.FC<MessageListProps>=({searchKey,hostUserId})=>{
         const showDate = prevDate !== currentDate;
         prevDate = currentDate;
         return (
-          <div className="flex flex-col gap-y-2.5"  key={message.id}>
-            {showDate && <div className="self-center text-base font-normal text-[#28303088] my-5">{currentFullTime}</div>}
+          <div className="flex flex-col gap-y-2.5" key={message.id}>
+            {showDate && (
+              <div className="self-center text-base font-normal text-[#28303088] my-5">
+                {currentFullTime}
+              </div>
+            )}
             <div
               className={`w-fit flex flex-col max-w-[60%] items-end p-0 break-words
                        ${
@@ -178,17 +200,30 @@ const MessageList:React.FC<MessageListProps>=({searchKey,hostUserId})=>{
                        }
         `}
             >
-              <p
-                className={`text-base font-normal text-[#001c3cbb] p-2.5 rounded-[10px] max-w-[100%]
+              {isValidImageUrl(message.content) ? (
+                <Image
+                  className={`p-2.5 rounded-[10px]
+                ${
+                  message.senderId == hostUserId ? "bg-[#2cbfca55]" : "bg-white"
+                }`}
+                  alt="image"
+                  src={message.content}
+                  width={300}
+                  height={1000}
+                />
+              ) : (
+                <p
+                  className={`text-base font-normal text-[#001c3cbb] p-2.5 rounded-[10px] max-w-[100%]
                        ${
                          message.senderId == hostUserId
                            ? "bg-[#2cbfca55]"
                            : "bg-white"
                        }
           `}
-              >
-                {message.content}
-              </p>
+                >
+                  {message.content}
+                </p>
+              )}
               <div className="flex flex-row gap-x-[5px]">
                 <p className="text-sm font-normal text-[#28303088]">
                   {moment(message.created_at).format("hh:mm A")}
@@ -206,6 +241,6 @@ const MessageList:React.FC<MessageListProps>=({searchKey,hostUserId})=>{
       })}
     </div>
   );
-}
+};
 
 export default MessageList;
